@@ -17,7 +17,7 @@ import Graphics.Canvas as C
 import Graphics.Isometric (Point, cube, filled, rotateX, rotateY, rotateZ, scale, renderScene, prism, translateX, translateY, cone)
 import Graphics.Isometric.DepthSort (depthSort)
 import Graphics.Isometric.Point as P
-import Math ( trunc)
+import Math as Math
 import Partial.Unsafe (unsafePartial)
 import Prelude (Unit, bind, discard, negate, pure, show, unit, void, ($), (*), (+), (-), (/), (/=), (<), (<>), (==), (>), (||))
 import Signal.DOM (animationFrame)
@@ -25,7 +25,19 @@ import Signal.Time (now)
 
 foreign import getSpeed ::  Number -> Number
 foreign import changeSpeed :: Number-> Number
---mouse handler using JQuery
+foreign import getAxis :: Char -> Char
+foreign import changeAxis :: Char -> Char
+foreign import changeDirection :: Number -> Number
+foreign import getDirection :: Number -> Number
+
+startMouseHandlers :: forall t114.            
+  Eff                   
+    ( dom :: DOM        
+    , console :: CONSOLE
+    , timer :: TIMER    
+    | t114              
+    )                   
+    Unit
 startMouseHandlers = do
   body <- body
   let downHandler event jq = do
@@ -37,23 +49,43 @@ startMouseHandlers = do
               upY <- getPageY event'
               timeUp <- now
               let dx = upX - downX
-              let temp = (((downX - upX )/(timeDown - timeUp)) * 500.0) 
-              log (show (changeSpeed (temp)))
+              let dy = upY - downY
+              let moddx = abs1 dx
+              let moddy = abs1 dy 
+              let axis 
+                      | moddx > moddy = (changeAxis 'x')
+                      | true    = (changeAxis 'y')
+              let directon 
+                    | axis=='x' = changeDirection dx
+                    | true      = changeDirection dy
+              let temp = (((Math.max moddx moddy)/(timeUp-timeDown)) * 500.0) 
+              log (show (changeSpeed (temp))<> show "change speed")
         on "mouseup" upHandler body
   on "mousedown" downHandler body
 
---function to get absolute value
+-- Example cube
+abs1 ::Number -> Number
+abs1 num | num < 0.0 = (- num)
+abs1 num = num
 
 abs :: Int -> Int
 abs num | num < 0 = (- num)
 abs num = num
 
--- function to create/draw the object (cube)
-scene ::Number -> Drawing
-scene rotX =
+
+scene ::Number->Char -> Drawing
+
+scene rotAngle 'y'=
   D.translate 550.0 300.0 $
     renderScene { x: -1.5, y: -3.5, z: 3.5 } $
-      scale 80.0 $ rotateZ rotX $
+      scale 80.0 $ rotateY rotAngle $
+           filled grey (prism (P.point (-1.5) (-1.5) (-1.5)) 3.0 3.0 3.0)
+
+
+scene rotAngle axis=
+  D.translate 550.0 300.0 $
+    renderScene { x: -1.5, y: -3.5, z: 3.5 } $
+      scale 80.0 $ rotateZ rotAngle $
            filled grey (prism (P.point (-1.5) (-1.5) (-1.5)) 3.0 3.0 3.0)
 
 
@@ -68,40 +100,41 @@ clearCanvas ctx = do
   _<-C.setFillStyle "#FFFFFF" ctx
   C.fillRect ctx { x: 0.0, y: 0.0, w: 1024.0, h: 800.0 }
 
---function to render the object (cube)
-fun :: forall t27.              
-  Number                 
-  -> Eff                 
-       ( canvas :: CANVAS
-       | t27             
-       )                 
-       Unit
        
+fun :: forall t57.                
+  Number                   
+  -> Eff                   
+       ( canvas :: CANVAS  
+       , console :: CONSOLE
+       | t57               
+       )                   
+       Unit
 fun rotX =  do
   mcanvas <- C.getCanvasElementById "canvas"
   let canvas = unsafePartial (fromJust mcanvas)
   ctx <- C.getContext2D canvas
   _<-clearCanvas ctx
-  render ctx $ scene rotX
+  let axis = getAxis 'r'
+  render ctx $ (scene rotX axis)
 
---function to rotate the cube 
-rotateCube :: forall t58.              
-  Number                 
-  -> Eff                 
-       ( canvas :: CANVAS
-       , timer :: TIMER  
-       | t58             
-       )                 
+rotateCube :: forall t140.               
+  Number                   
+  -> Eff                   
+       ( canvas :: CANVAS  
+       , console :: CONSOLE
+       , timer :: TIMER    
+       | t140              
+       )                   
        Unit
 rotateCube angle= do
      fun angle
      let newSpeed =  (getSpeed angle)
+     let direction = getDirection 1.0
      if ((newSpeed <20.0) )
-         then void $ setTimeout 500 (rotateCube (angle + 0.0))
-         else let timep = (10000/(abs (fromMaybe 200 (fromNumber (trunc (newSpeed)))))) 
-         in void $ setTimeout timep (rotateCube (angle + 0.1))
+         then void $ setTimeout 500 (rotateCube (angle + (0.0*direction)))
+         else let timep = (10000/(abs (fromMaybe 200 (fromNumber (Math.trunc (newSpeed)))))) 
+         in void $ setTimeout timep (rotateCube (angle + (0.1*direction)))
                
--- Main 
 main :: forall t141.            
   Eff                   
     ( canvas :: CANVAS  
@@ -111,7 +144,6 @@ main :: forall t141.
     | t141              
     )                   
     Unit
-
 main = do
    rotateCube 0.0
    startMouseHandlers
