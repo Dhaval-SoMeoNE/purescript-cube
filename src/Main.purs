@@ -17,27 +17,15 @@ import Graphics.Canvas as C
 import Graphics.Isometric (Point, cube, filled, rotateX, rotateY, rotateZ, scale, renderScene, prism, translateX, translateY, cone)
 import Graphics.Isometric.DepthSort (depthSort)
 import Graphics.Isometric.Point as P
-import Math (cos, pi, sin, trunc)
+import Math ( trunc)
 import Partial.Unsafe (unsafePartial)
 import Prelude (Unit, bind, discard, negate, pure, show, unit, void, ($), (*), (+), (-), (/), (/=), (<), (<>), (==), (>), (||))
 import Signal.DOM (animationFrame)
 import Signal.Time (now)
 
-
 foreign import getSpeed ::  Number -> Number
 foreign import changeSpeed :: Number-> Number
-foreign import flag :: Boolean -> Boolean
-
-startMouseHandlers :: forall t149.            
-  Eff                   
-    ( dom :: DOM      
-    , canvas :: CANVAS  
-    , console :: CONSOLE
-    , timer :: TIMER    
-    | t149              
-    )                   
-    Unit
-
+--mouse handler using JQuery
 startMouseHandlers = do
   body <- body
   let downHandler event jq = do
@@ -50,26 +38,23 @@ startMouseHandlers = do
               timeUp <- now
               let dx = upX - downX
               let temp = (((downX - upX )/(timeDown - timeUp)) * 500.0) 
-              let speed = if((getSpeed temp) == 0.0)
-                             then changeSpeed (temp) 
-                             else changeSpeed (0.0)
-              rotateCube 0.0
+              log (show (changeSpeed (temp)))
         on "mouseup" upHandler body
   on "mousedown" downHandler body
 
--- Example cube
+--function to get absolute value
 
 abs :: Int -> Int
 abs num | num < 0 = (- num)
 abs num = num
 
-
+-- function to create/draw the object (cube)
 scene ::Number -> Drawing
 scene rotX =
   D.translate 550.0 300.0 $
     renderScene { x: -1.5, y: -3.5, z: 3.5 } $
       scale 80.0 $ rotateZ rotX $
-           filled grey   (prism (P.point (-1.5) (-1.5) (-1.5)) 3.0 3.0 3.0)
+           filled grey (prism (P.point (-1.5) (-1.5) (-1.5)) 3.0 3.0 3.0)
 
 
 clearCanvas :: forall t22.              
@@ -83,6 +68,7 @@ clearCanvas ctx = do
   _<-C.setFillStyle "#FFFFFF" ctx
   C.fillRect ctx { x: 0.0, y: 0.0, w: 1024.0, h: 800.0 }
 
+--function to render the object (cube)
 fun :: forall t27.              
   Number                 
   -> Eff                 
@@ -98,6 +84,7 @@ fun rotX =  do
   _<-clearCanvas ctx
   render ctx $ scene rotX
 
+--function to rotate the cube 
 rotateCube :: forall t58.              
   Number                 
   -> Eff                 
@@ -110,10 +97,11 @@ rotateCube angle= do
      fun angle
      let newSpeed =  (getSpeed angle)
      if ((newSpeed <20.0) )
-         then pure unit
-         else let timep = (20000/(abs (fromMaybe 200 (fromNumber (trunc (newSpeed)))))) 
+         then void $ setTimeout 500 (rotateCube (angle + 0.0))
+         else let timep = (10000/(abs (fromMaybe 200 (fromNumber (trunc (newSpeed)))))) 
          in void $ setTimeout timep (rotateCube (angle + 0.1))
                
+-- Main 
 main :: forall t141.            
   Eff                   
     ( canvas :: CANVAS  
@@ -123,6 +111,7 @@ main :: forall t141.
     | t141              
     )                   
     Unit
+
 main = do
-   fun 0.0
+   rotateCube 0.0
    startMouseHandlers
