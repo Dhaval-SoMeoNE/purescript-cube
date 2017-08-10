@@ -1,0 +1,28 @@
+{
+  "name": "purescript-isometric",
+  "authors": [
+    "David Peter <mail@david-peter.de>"
+  ],
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "bower_components",
+    "output",
+    "test",
+    "html"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/sharkdp/purescript-isometric.git"
+  },
+  "dependencies": {
+    "purescript-drawing": "^3.0.0",
+    "purescript-orders": "^3.0.0",
+    "purescript-graphs": "^3.0.0",
+    "purescript-colors": "^3.0.0",
+    "purescript-nonempty": "^4.0.0"
+  },
+  "devDependencies": {
+    "purescript-flare": "^3.0.0"
+  }
+}

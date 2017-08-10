@@ -1,0 +1,105 @@
+module Main where
+
+import Control.Monad.Eff.JQuery
+import Prelude
+
+import Color (Color, darken)
+import Color.Scheme.MaterialDesign (grey)
+import Control.Monad.Eff (Eff)
+import Control.Monad.Eff.Console (CONSOLE, log)
+import Control.Monad.Eff.Timer (setTimeout)
+import Control.Monad.ST (modifySTRef, newSTRef, readSTRef, writeSTRef)
+import DOM.Event.EventPhase (toEnumEventPhase)
+import Data.Array ((..))
+import Data.Foldable (foldMap, fold)
+import Data.Foreign (readString)
+import Data.Int (fromNumber)
+import Data.Maybe (fromJust, fromMaybe)
+import Flare.Drawing (render)
+import Flare.Drawing as D
+import Graphics.Canvas as C
+import Graphics.Isometric (Point, cube, filled, rotateX, rotateY, rotateZ, scale, renderScene, prism, translateX, translateY, cone)
+import Graphics.Isometric.DepthSort (depthSort)
+import Graphics.Isometric.Point as P
+import Math (cos, pi, sin, trunc)
+import Partial.Unsafe (unsafePartial)
+import Signal.DOM (animationFrame)
+import Signal.Time (now)
+
+speed = newSTRef 10.0
+
+
+startMouseHandlers = do
+  body <- body
+  mousePress <- newSTRef {x:0.0,y:0.0,ti:0.0}
+  mouseUp <- newSTRef {x:0.0,y:0.0,ti:0.0} 
+  let downHandler event jq = do
+        downX <- getPageX event
+        downY <- getPageY event
+        timeDown <- now
+        void $ writeSTRef mousePress {x: downX, y:downY, ti:timeDown}
+        temp2 <- speed
+        void $ writeSTRef temp2 0.0
+        temp3 <- readSTRef temp2
+        log (show "temp3 = " <> show temp3)
+        log (show "down" <>show "  "<>show downX <>show "  "<> show downY <> show "  " <> show timeDown)
+        let upHandler event' jq' = do
+              upX <- getPageX event
+              upY <- getPageY event
+              timeUp <- now
+              let temp = (downX - upX )/(timeDown - timeUp)
+              temp1 <- speed
+              void $ writeSTRef temp1 1.0
+              dumy1 temp
+              log (show "up" <>show "  "<>show upX <>show "  "<> show upY <> show "  " <> show timeUp) 
+              log (show temp)
+        on "mouseup" upHandler body
+  on "mousedown" downHandler body
+
+
+dumy1 a = dumy 0.0 a
+-- Example cube
+
+abs num | num < 0.0 = (- num)
+abs num = num
+--scene2 :: Number -> Number -> D.Drawing
+scene rotX rotY rotZ =
+  D.translate 500.0 190.0 $
+    renderScene { x: -1.5, y: -3.5, z: 3.5 } $
+      scale 60.0 $ rotateX rotX $ rotateY rotY $ rotateZ rotZ $
+           filled grey   (prism (P.point (-1.5) (-1.5) (-1.5)) 3.0 3.0 3.0)
+
+
+clearCanvas ctx = do
+  _<-C.setFillStyle "#FFFFFF" ctx
+  C.fillRect ctx { x: 0.0, y: 0.0, w: 1024.0, h: 800.0 }
+
+fun rotX =  do
+  mcanvas <- C.getCanvasElementById "canvas"
+  let canvas = unsafePartial (fromJust mcanvas)
+  ctx <- C.getContext2D canvas
+  _<-clearCanvas ctx
+  render ctx $ scene rotX 0.0 0.0
+
+convertNumber = do 
+      temp <- speed
+      temp2 <- readSTRef temp 
+      pure temp2
+      
+dumy angle spee = do
+     fun angle
+     angleChange <- convertNumber
+     void $ setTimeout (1000000/(fromMaybe 0 (fromNumber spee))) (dumy (angle+angleChange) spee)
+{- dospee)
+{- do
+  D.runFlareDrawing "controls2" "canvas2" $
+    scene2 x y <$> numberSlider "RotationX" 0.0 (2.0 * pi) 0.1 0.0
+           <*> numberSlider "RotationY" 0.0 (2.0 * pi) 0.1 0.0
+           <*>
+           <*> lift animationFrame
+      -}
+main = do
+   log (show "Start")
+   fun 0.0
+   startMouseHandlers
+   log (show "END")
