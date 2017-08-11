@@ -29,7 +29,8 @@ foreign import getAxis :: Char -> Char
 foreign import changeAxis :: Char -> Char
 foreign import changeDirection :: Number -> Number
 foreign import getDirection :: Number -> Number
-
+foreign import checkMouseDown :: Boolean -> Boolean
+foreign import changeMouseDown :: Boolean -> Boolean
 startMouseHandlers :: forall t114.            
   Eff                   
     ( dom :: DOM        
@@ -41,10 +42,13 @@ startMouseHandlers :: forall t114.
 startMouseHandlers = do
   body <- body
   let downHandler event jq = do
+        _<- log $ show $ changeMouseDown true
         downX <- getPageX event
         downY <- getPageY event
         timeDown <- now
+        log (show "DOWN")
         let upHandler event' jq' = do
+              _<- log $ show $ changeMouseDown false
               upX <- getPageX event'
               upY <- getPageY event'
               timeUp <- now
@@ -129,11 +133,15 @@ rotateCube :: forall t140.
 rotateCube angle= do
      fun angle
      let newSpeed =  (getSpeed angle)
-     _<- log (show (changeSpeed (newSpeed -5.0)))        --decelerate
+     let flag = checkMouseDown true
+     log (show flag)  
+     if (flag== true)
+             then log $ show $ changeSpeed $ newSpeed -50.0   --decelerate
+             else log $ show $ changeSpeed $ newSpeed -5.0    --decelerate
      let direction = getDirection 1.0
      if ((newSpeed <20.0) )
-         then void $ setTimeout 500 (rotateCube (angle + (0.0*direction)))
-         else let timep = (10000/(abs (fromMaybe 200 (fromNumber (Math.trunc (newSpeed)))))) 
+         then void $ setTimeout 500 (rotateCube (angle + (0.0)))
+         else let timep = (10000/(abs $ fromMaybe 200 $ fromNumber $ Math.trunc $newSpeed)) 
          in void $ setTimeout timep (rotateCube (angle + (0.1*direction)))
                
 main :: forall t141.            
