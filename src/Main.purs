@@ -129,6 +129,7 @@ rotateCube :: forall t140.
 rotateCube angle= do
      fun angle
      let newSpeed =  (getSpeed angle)
+     _<- log (show (changeSpeed (newSpeed -5.0)))        --decelerate
      let direction = getDirection 1.0
      if ((newSpeed <20.0) )
          then void $ setTimeout 500 (rotateCube (angle + (0.0*direction)))
