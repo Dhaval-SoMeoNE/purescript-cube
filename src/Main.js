@@ -3,7 +3,16 @@
 var speed = 0.0
 var axis = 'x'
 var direction = 1.0
-
+var flag = false
+exports.changeMouseDown= function(flag1)
+{
+flag = flag1;
+return flag;
+}
+exports.checkMouseDown= function(flag1)
+{
+return flag;
+}
 exports.changeDirection= function(diff)
 {
 if (diff<0)
@@ -30,13 +39,13 @@ exports.getAxis=function (ch)
 exports.changeSpeed = function(speed1) {
 if (speed1 < 20.0 )
     speed = 0.0;
-else if ( speed1 > 1000.0)
-    speed = 1000.0;
+else if ( speed1 > 1500.0)
+    speed = 1500.0;
 else 
     speed = speed1;
 
 console.log(speed,"changeSpeed");
-return speed1;
+return speed;
 };
 
 exports.getSpeed = function(dumy)
